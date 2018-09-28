@@ -65,15 +65,26 @@ def crawling_kyochon():
     result = []
 
     # 시작과 끝이 있으면 range, 없으면 count
-    for page in count(start=1):
-        html = crawling('http://www.kyochon.com/shop/domestic.asp?sido1=18&sido2=1&txtsearch='.format(page))
-        bs = BeautifulSoup(html, 'html.parser')
-        print(bs)
+    for sido1 in range(1,18):
+        for sido2 in count(start=1):
+            html = crawling('http://www.kyochon.com/shop/domestic.asp?sido1={}&sido2={}&txtsearch='.format(sido1,sido2))
+            if (html is None):
+                break
+            bs = BeautifulSoup(html,'html.parser')
+            tags_ul=bs.find('ul',attrs={'class':'list'})
+            for tag_a in tags_ul.findAll('dl'):
+                tag_dt = tag_a.find('dt')
+                if tag_dt is None:
+                    break
+                name = tag_dt.get_text()
+                address=(tag_a.find('dd').get_text().strip().split('\r\n'))[0]
+                result.append((name,address))
 
+    #print(result)
     # Store
-    # table = pd.DataFrame(result, columns=['name', 'address'])
-    # table.to_csv('{0}/kyochon_table.csv'.format(RESULT_DIRECTORY), encoding='utf-8', mode='w', index=True)
-    # print(table)
+    table = pd.DataFrame(result, columns=['name', 'address'])
+    table.to_csv('{0}/kyochon_table.csv'.format(RESULT_DIRECTORY), encoding='utf-8', mode='w', index=True)
+    print(table)
 
 
 
