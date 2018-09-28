@@ -1,6 +1,9 @@
+import time
+from datetime import datetime
 from itertools import count
 
 from bs4 import BeautifulSoup
+from selenium import webdriver
 
 from collection.crawler import crawling
 import pandas as pd
@@ -34,6 +37,8 @@ def crawling_pelicana():
     table = pd.DataFrame(result, columns=['name','address'])
     table.to_csv('{0}/pelicana_table.csv'.format(RESULT_DIRECTORY),encoding='utf-8',mode='w',index=True)
     print(table)
+
+
 
 def crawling_nene():
 
@@ -88,6 +93,47 @@ def crawling_kyochon():
 
 
 
+def crawling_goobne():
+
+    result = []
+    url = "https://www.goobne.co.kr/store/search_store.jsp"
+
+    # 첫 페이지 로딩
+    wd = webdriver.Chrome('D:/IOT2018/chromedriver_win32/chromedriver.exe')
+    wd.get(url)
+    time.sleep(3)
+
+    for page in count(start=1):
+        # 자바 스크립트 실행
+        script = 'store.getList({})'.format(page)
+        wd.execute_script(script)
+        print('{0} : success for request [{1}]'.format(datetime.now(), script))
+        time.sleep(3)
+
+        # 자바스크립트 실행 결과 HTML(렌더링된 HTML) 가져오기
+        html = wd.page_source
+
+        # 데이터파싱 with bs4
+        bs = BeautifulSoup(html, 'html.parser')
+        tag_tbody = bs.find('tbody',attrs={"id":'store_list'})
+        tags_tr = tag_tbody.findAll('tr')
+
+
+        if tags_tr[0].get('class') is None:
+            break
+
+        for tag_tr in tags_tr:
+            strings = list(tag_tr.strings)
+            name = strings[1]
+            address = strings[6]
+            result.append((name,address))
+
+
+    # Store
+    table = pd.DataFrame(result, columns=['name', '  address'])
+    table.to_csv('{0}/goobne_table.csv'.format(RESULT_DIRECTORY), encoding='utf-8', mode='w', index=True)
+
+
 if (__name__ == '__main__'):
     # 페리카나
     #crawling_pelicana()
@@ -96,4 +142,7 @@ if (__name__ == '__main__'):
     #crawling_nene()
 
     # 교촌
-    crawling_kyochon()
+    #crawling_kyochon()
+
+    # 굽네
+    crawling_goobne()
